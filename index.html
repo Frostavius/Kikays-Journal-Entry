@@ -81,7 +81,7 @@
 
   <div class="entry-log">
     <h2>Saved Entries</h2>
-    <div id="entries"></div>
+    <div id="entries"><i>Entries are now saved directly to Google Sheets.</i></div>
   </div>
 
   <script>
@@ -159,10 +159,6 @@
       creditsContainer.appendChild(group);
     }
 
-    function loadEntries() {
-      entriesDiv.innerHTML = '<i>Entries are now saved directly to Google Sheets.</i>';
-    }
-
     form.addEventListener('submit', function(e) {
       e.preventDefault();
 
@@ -199,32 +195,22 @@
         description
       };
 
-      fetch("https://script.google.com/macros/s/AKfycbzWmS8KBIIUPaBEN6TQaKXEr-2d1T2uu7VQJWEMUm4fm5dv1Vb5eyRPqWR8t9kz5g16/exec", {
-        method: "POST",
-        body: JSON.stringify(newEntry),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
-      .then(response => response.text())
-      .then(data => {
-        alert("Entry submitted and saved to Google Sheets!");
+      const bridgeUrl = "https://script.google.com/macros/s/AKfycbwUK6ZXeLsqR2zGLjfqICQYZ11KM-PDEDSSc4YFaj_yr4fVGcYU1yohN3C3XoAPjXVZ/exec";
+      const win = window.open(bridgeUrl);
+      setTimeout(() => {
+        win.postMessage(newEntry, "*");
+        alert("Entry sent to Google Sheets gateway!");
         form.reset();
         debitsContainer.innerHTML = '<h3>Debit Entries</h3>';
         creditsContainer.innerHTML = '<h3>Credit Entries</h3>';
         addDebit();
         addCredit();
         loadEntries();
-      })
-      .catch(error => {
-        console.error("Error:", error);
-        alert("Something went wrong. Please try again.");
-      });
+      }, 1000);
     });
 
     addDebit();
     addCredit();
-    loadEntries();
   </script>
 </body>
 </html>
