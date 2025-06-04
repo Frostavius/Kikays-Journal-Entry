@@ -160,15 +160,7 @@
     }
 
     function loadEntries() {
-      const entries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
-      entriesDiv.innerHTML = entries.map(entry => `
-        <div class="entry-item">
-          <strong>${entry.date}</strong><br>
-          Debit: ${entry.debits.map(d => `${d.account} - ₱${d.amount}`).join(', ')}<br>
-          Credit: ${entry.credits.map(c => `${c.account} - ₱${c.amount}`).join(', ')}<br>
-          Desc: ${entry.description}
-        </div>
-      `).join('');
+      entriesDiv.innerHTML = '<i>Entries are now saved directly to Google Sheets.</i>';
     }
 
     form.addEventListener('submit', function(e) {
@@ -207,15 +199,27 @@
         description
       };
 
-      const entries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
-      entries.push(newEntry);
-      localStorage.setItem('journalEntries', JSON.stringify(entries));
-      form.reset();
-      debitsContainer.innerHTML = '<h3>Debit Entries</h3>';
-      creditsContainer.innerHTML = '<h3>Credit Entries</h3>';
-      addDebit();
-      addCredit();
-      loadEntries();
+      fetch("https://script.google.com/macros/s/AKfycbzVs9rJ9wJABw8GCx_9SZJJvh-QHe046C6TgPAbssdSFaaV5lY9bz67C75xqJFNnGL4/exec", {
+        method: "POST",
+        body: JSON.stringify(newEntry),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => response.text())
+      .then(data => {
+        alert("Entry submitted and saved to Google Sheets!");
+        form.reset();
+        debitsContainer.innerHTML = '<h3>Debit Entries</h3>';
+        creditsContainer.innerHTML = '<h3>Credit Entries</h3>';
+        addDebit();
+        addCredit();
+        loadEntries();
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
+      });
     });
 
     addDebit();
