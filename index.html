@@ -81,10 +81,12 @@
   </div>
 
   <script>
+    // Grab form and containers
     const form = document.getElementById('entryForm');
     const debitsContainer = document.getElementById('debits');
     const creditsContainer = document.getElementById('credits');
 
+    // Full list of accounts, sorted alphabetically
     const accounts = [
       "Accounts Payable",
       "Advertising Expense",
@@ -106,6 +108,7 @@
       "Utilities Expense"
     ].sort();
 
+    // Creates a dropdown <select> with all accounts
     function createAccountDropdown(nameAttr) {
       const select = document.createElement('select');
       select.name = nameAttr;
@@ -124,6 +127,7 @@
       return select;
     }
 
+    // Adds one debit line (account + amount)
     function addDebit() {
       const group = document.createElement('div');
       group.className = 'group';
@@ -139,6 +143,7 @@
       debitsContainer.appendChild(group);
     }
 
+    // Adds one credit line (account + amount)
     function addCredit() {
       const group = document.createElement('div');
       group.className = 'group';
@@ -154,47 +159,45 @@
       creditsContainer.appendChild(group);
     }
 
+    // Handle form submission
     form.addEventListener('submit', function(e) {
       e.preventDefault();
 
+      // Gather form data
       const date = form.date.value;
       const description = form.description.value;
-
       const debitAccounts = Array.from(form.querySelectorAll('select[name="debitAccount"]'));
       const debitAmounts = Array.from(form.querySelectorAll('input[name="debitAmount"]'));
       const creditAccounts = Array.from(form.querySelectorAll('select[name="creditAccount"]'));
       const creditAmounts = Array.from(form.querySelectorAll('input[name="creditAmount"]'));
 
+      // Build arrays of debit and credit objects
       const debits = debitAccounts.map((select, i) => ({
         account: select.value,
         amount: parseFloat(debitAmounts[i].value)
       }));
-
       const credits = creditAccounts.map((select, i) => ({
         account: select.value,
         amount: parseFloat(creditAmounts[i].value)
       }));
 
+      // Check if totals match
       const totalDebit = debits.reduce((sum, d) => sum + d.amount, 0);
       const totalCredit = credits.reduce((sum, c) => sum + c.amount, 0);
-
       if (totalDebit !== totalCredit) {
         alert('Total Debit and Credit must be equal.');
         return;
       }
 
-      const newEntry = {
-        date,
-        debits,
-        credits,
-        description
-      };
+      // Construct the entry object
+      const newEntry = { date, debits, credits, description };
 
       // ───────────────────────────────────────────────────
-      // 👇 Paste your Apps Script Web App URL exactly here:
+      // 👇 Paste your exact Apps Script Web App URL here:
       const bridgeUrl = "https://script.google.com/macros/s/AKfycbyzAOTALnqfD8NNLzUXrTc5jvY4j664CVnO799t1nb5sGFzQ1Qt9oKw08C9d8qg3p3B/exec";
       // ───────────────────────────────────────────────────
 
+      // Send data via fetch() to Google Apps Script
       fetch(bridgeUrl, {
         method: "POST",
         body: JSON.stringify(newEntry),
@@ -205,6 +208,7 @@
       .then(response => response.text())
       .then(data => {
         alert("Entry submitted and saved to Google Sheets!");
+        // Reset form and recreate one blank line each
         form.reset();
         debitsContainer.innerHTML = '<h3>Debit Entries</h3>';
         creditsContainer.innerHTML = '<h3>Credit Entries</h3>';
@@ -217,7 +221,7 @@
       });
     });
 
-    // Initialize with one debit + one credit row
+    // Create initial one debit + one credit line
     addDebit();
     addCredit();
   </script>
