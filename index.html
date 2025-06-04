@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Journal Entry Logger</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .entry-log {
+      margin-top: 2rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 5px;
+    }
+    .entry-log h2 {
+      margin-top: 0;
+    }
+    .entry-item {
+      border-bottom: 1px solid #ccc;
+      padding: 0.5rem 0;
+    }
+    .group {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #fff;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kikays Co Journal Entry</h1>
+
+  <form id="entryForm">
+    <label for="date">Date</label>
+    <input type="date" id="date" name="date" required />
+
+    <div id="debits">
+      <h3>Debit Entries</h3>
+    </div>
+    <button type="button" onclick="addDebit()">+ Add Debit</button>
+
+    <div id="credits">
+      <h3>Credit Entries</h3>
+    </div>
+    <button type="button" onclick="addCredit()">+ Add Credit</button>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="3" placeholder="e.g. CCTV Purchase" required></textarea>
+
+    <button type="submit">Submit Entry</button>
+  </form>
+
+  <div class="entry-log">
+    <h2>Saved Entries</h2>
+    <div id="entries"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('entryForm');
+    const entriesDiv = document.getElementById('entries');
+    const debitsContainer = document.getElementById('debits');
+    const creditsContainer = document.getElementById('credits');
+
+    const accounts = [
+      "Accounts Payable",
+      "Advertising Expense",
+      "Capital",
+      "Cash",
+      "CoH",
+      "Cost of Goods Sold",
+      "Equipment",
+      "Furniture",
+      "Gcash",
+      "Government Expense",
+      "Inventory",
+      "Online Sales",
+      "Rent Expense",
+      "Salary Expense",
+      "Services Expense",
+      "Store Sales",
+      "Supplies Expense",
+      "Utilities Expense"
+    ].sort();
+
+    function createAccountDropdown(nameAttr) {
+      const select = document.createElement('select');
+      select.name = nameAttr;
+      select.required = true;
+      select.className = 'accountDropdown';
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = '-- Select Account --';
+      select.appendChild(defaultOption);
+      accounts.forEach(acc => {
+        const option = document.createElement('option');
+        option.value = acc;
+        option.textContent = acc;
+        select.appendChild(option);
+      });
+      return select;
+    }
+
+    function addDebit() {
+      const group = document.createElement('div');
+      group.className = 'group';
+      const select = createAccountDropdown('debitAccount');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.name = 'debitAmount';
+      input.step = '0.01';
+      input.required = true;
+      input.placeholder = 'Amount';
+      group.appendChild(select);
+      group.appendChild(input);
+      debitsContainer.appendChild(group);
+    }
+
+    function addCredit() {
+      const group = document.createElement('div');
+      group.className = 'group';
+      const select = createAccountDropdown('creditAccount');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.name = 'creditAmount';
+      input.step = '0.01';
+      input.required = true;
+      input.placeholder = 'Amount';
+      group.appendChild(select);
+      group.appendChild(input);
+      creditsContainer.appendChild(group);
+    }
+
+    function loadEntries() {
+      const entries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
+      entriesDiv.innerHTML = entries.map(entry => `
+        <div class="entry-item">
+          <strong>${entry.date}</strong><br>
+          Debit: ${entry.debits.map(d => `${d.account} - ₱${d.amount}`).join(', ')}<br>
+          Credit: ${entry.credits.map(c => `${c.account} - ₱${c.amount}`).join(', ')}<br>
+          Desc: ${entry.description}
+        </div>
+      `).join('');
+    }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const date = form.date.value;
+      const description = form.description.value;
+
+      const debitAccounts = Array.from(form.querySelectorAll('select[name="debitAccount"]'));
+      const debitAmounts = Array.from(form.querySelectorAll('input[name="debitAmount"]'));
+      const creditAccounts = Array.from(form.querySelectorAll('select[name="creditAccount"]'));
+      const creditAmounts = Array.from(form.querySelectorAll('input[name="creditAmount"]'));
+
+      const debits = debitAccounts.map((select, i) => ({
+        account: select.value,
+        amount: parseFloat(debitAmounts[i].value)
+      }));
+
+      const credits = creditAccounts.map((select, i) => ({
+        account: select.value,
+        amount: parseFloat(creditAmounts[i].value)
+      }));
+
+      const totalDebit = debits.reduce((sum, d) => sum + d.amount, 0);
+      const totalCredit = credits.reduce((sum, c) => sum + c.amount, 0);
+
+      if (totalDebit !== totalCredit) {
+        alert('Total Debit and Credit must be equal.');
+        return;
+      }
+
+      const newEntry = {
+        date,
+        debits,
+        credits,
+        description
+      };
+
+      const entries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
+      entries.push(newEntry);
+      localStorage.setItem('journalEntries', JSON.stringify(entries));
+      form.reset();
+      debitsContainer.innerHTML = '<h3>Debit Entries</h3>';
+      creditsContainer.innerHTML = '<h3>Credit Entries</h3>';
+      addDebit();
+      addCredit();
+      loadEntries();
+    });
+
+    addDebit();
+    addCredit();
+    loadEntries();
+  </script>
+</body>
+</html>
